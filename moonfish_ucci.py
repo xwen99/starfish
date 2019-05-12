@@ -1,6 +1,4 @@
-#!/usr/bin/env pypy
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 import importlib
 import re
 import sys
@@ -18,7 +16,7 @@ def main():
     #max_time = -1
     max_time = 1000
     #max_depth = 1000
-    max_depth = 4
+    max_depth = 8
     show_thinking = False
 
     stack = []

@@ -1,20 +1,7 @@
-#!/usr/bin/env pypy
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 import re, sys, time
 from itertools import count
 from collections import OrderedDict, namedtuple
-
-###############################################################################
-# Python 2 compatability
-if sys.version_info[0] == 2:
-    input = raw_input
-    class NewOrderedDict(OrderedDict):
-        def move_to_end(self, key):
-            value = self.pop(key)
-            self[key] = value
-    OrderedDict = NewOrderedDict
-
 
 ###############################################################################
 # Piece-Square tables. 
@@ -205,7 +192,7 @@ N_PRE_MOVES = ((-27,-13), (-25,-13), (-15, -1), (-11, 1), (11, -1), (15, 1), (25
 DIRECTIONS = (13, -13,-1, 1)
 KKK_DIRECTION = -13
 
-# When a MATE is detected, we'll set the score to MATE_UPPER - plies to get there
+# When a MATE is detected, we'll set the score to MATE_UPPER - plies(层数) to get there
 # E.g. Mate in 3 will be MATE_UPPER - 6
 MATE_LOWER = piece['K'] - 2 * (piece['R'] + piece['C'] + piece['N'] + piece['A'] + piece['B']) - 5 * piece['P']
 MATE_UPPER = piece['K'] + 2 * (piece['R'] + piece['C'] + piece['N'] + piece['A'] + piece['B']) + 5 * piece['P']
@@ -474,6 +461,7 @@ Entry = namedtuple('Entry', 'lower upper')
 
 # The normal OrderedDict doesn't update the position of a key in the list,
 # when the value is changed.
+# 按照插入顺序排序的字典
 class LRUCache:
     '''Store items in the order the keys were last added'''
     def __init__(self, size):
@@ -499,15 +487,15 @@ class Searcher:
         self.nodes = 0
         self.max_depth = 100
         self.ban_move = None
-        self.deep = 0
+        self.depth = 0
         
     def bound(self, pos, gamma, depth, root=True):
         """ returns r where
                 s(pos) <= r < gamma    if gamma > s(pos)
                 gamma <= r <= s(pos)   if gamma <= s(pos)"""
-        self.deep += 1
+        self.depth += 1
         self.nodes += 1
-        #print('    '*self.deep, 'bound depth %d ' % depth, 'BLACK_MOVE' if pos.move_color else 'RED_MOVE  ', 'gamma(%d)' % gamma, 'root' if root else '') 
+        #print('    '*self.depth, 'bound depth %d ' % depth, 'BLACK_MOVE' if pos.move_color else 'RED_MOVE  ', 'gamma(%d)' % gamma, 'root' if root else '') 
         # Depth <= 0 is QSearch. Here any position is searched as deeply as is needed for calmness, and so there is no reason to keep different depths in the transposition table.
         depth = max(depth, 0)
 
@@ -516,16 +504,16 @@ class Searcher:
         # the remaining code has to be comfortable with being mated, stalemated
         # or able to capture the opponent king.
         if pos.score <= -MATE_LOWER:
-            self.deep -= 1
+            self.depth -= 1
             return -MATE_UPPER
 
         #查表确认已经搜索过这个局面了,并确认已存储的搜索也覆盖了该节点
         entry = self.tp_score.get((pos, depth, root), Entry(-MATE_UPPER, MATE_UPPER))
         if entry.lower >= gamma and (not root or self.tp_move.get(pos) is not None):
-            self.deep -= 1
+            self.depth -= 1
             return entry.lower
         if entry.upper < gamma:
-            self.deep -= 1
+            self.depth -= 1
             return entry.upper
 
         # Here extensions may be added
@@ -536,7 +524,7 @@ class Searcher:
         def moves():
             # First try not moving at all
             if depth > 0 and not root and any(c in pos.board for c in 'PRNC'):  
-                #print('    '*(self.deep), 'yield null move')
+                #print('    '*(self.depth), 'yield null move')
                 yield None, -self.bound(pos.nullmove(), 1-gamma, depth-3, root=False)
                 
             #depth <=0 静态搜索,直接返回该局面的得分
@@ -550,14 +538,14 @@ class Searcher:
                    score = score - MATE_UPPER #MATE_LOWER
                 if go_dead:
                    score = -MATE_UPPER  
-                #print('    '*self.deep, 'yeild score {}'.format(score))
+                #print('    '*self.depth, 'yeild score {}'.format(score))
                 
                 yield None, score
                 
             # Then killer move. We search it twice, but the tp will fix things for us. Note, we don't have to check for legality, since we've already done it before. Also note that in QS the killer must be a capture, otherwise we will be non deterministic.
             killer = self.tp_move.get(pos)
             if killer and (depth > 0 or pos.value(killer) >= QS_LIMIT):
-                #print('    '*(self.deep), 'yield killer move', move_to_zh(pos.board, killer))
+                #print('    '*(self.depth), 'yield killer move', move_to_zh(pos.board, killer))
                 yield killer, -self.bound(pos.move(killer), 1-gamma, depth-1, root=False)
                 
             # Then all the other moves
@@ -566,19 +554,19 @@ class Searcher:
                     print('ban_move', move)
                     continue                    
                 if depth > 0 or pos.value(move) >= QS_LIMIT:
-                    #print('    '*(self.deep), 'yield normal move', move_to_zh(pos.board, move))
+                    #print('    '*(self.depth), 'yield normal move', move_to_zh(pos.board, move))
                     yield move, -self.bound(pos.move(move), 1-gamma, depth-1, root=False)
                     
         # Run through the moves, shortcutting when possible
         best = -MATE_UPPER
         for move, score in moves():
             move_str = 'null_move' if (move == None) else move_to_zh(pos.board, move)
-            #print('    '*(self.deep), 'BLACK_MOVE' if pos.move_color else 'RED_MOVE', 'move for depth %d'%depth, move_str, score)
+            #print('    '*(self.depth), 'BLACK_MOVE' if pos.move_color else 'RED_MOVE', 'move for depth %d'%depth, move_str, score)
             best = max(best, score)
             if best >= gamma:
                 # Save the move for pv construction and killer heuristic
                 self.tp_move[pos] = move
-                #print('    '*(self.deep), 'save tp move', 'None' if move == None else move_to_zh(pos.board, move))
+                #print('    '*(self.depth), 'save tp move', 'None' if move == None else move_to_zh(pos.board, move))
                 break
 
         # Stalemate checking is a bit tricky: Say we failed low, because
@@ -604,13 +592,13 @@ class Searcher:
         if best < gamma:
             self.tp_score[(pos, depth, root)] = Entry(entry.lower, best)
 
-        self.deep -= 1
+        self.depth -= 1
         return best
 
     def _search(self, pos):
         """ Iterative deepening MTD-bi search """
         self.nodes = 0
-        self.deep = 0
+        self.depth = 0
         
         # In finished games, we could potentially go far enough to cause a recursion
         # limit exception. Hence we bound the ply.
