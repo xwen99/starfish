@@ -22,7 +22,7 @@ struct HashStruct {
 extern HashStruct* hshItems;
 // 提取置换表项
 static int ProbeHash(const PositionStruct& pos, int vlAlpha, int vlBeta, int nDepth, int& mv) {
-	BOOL bMate; // 杀棋标志：如果是杀棋，那么不需要满足深度条件
+	bool bMate; // 杀棋标志：如果是杀棋，那么不需要满足深度条件
 	HashStruct hsh;
 
 	hsh = hshItems[pos.zobr.dwKey & (HASH_SIZE - 1)];
@@ -31,20 +31,20 @@ static int ProbeHash(const PositionStruct& pos, int vlAlpha, int vlBeta, int nDe
 		return -MATE_VALUE;
 	}
 	mv = hsh.wmv;
-	bMate = FALSE;
+	bMate = false;
 	if (hsh.svl > WIN_VALUE) {
 		if (hsh.svl < BAN_VALUE) {
 			return -MATE_VALUE; // 可能导致搜索的不稳定性，立刻退出，但最佳着法可能拿到
 		}
 		hsh.svl -= pos.nDistance;
-		bMate = TRUE;
+		bMate = true;
 	}
 	else if (hsh.svl < -WIN_VALUE) {
 		if (hsh.svl > -BAN_VALUE) {
 			return -MATE_VALUE; // 同上
 		}
 		hsh.svl += pos.nDistance;
-		bMate = TRUE;
+		bMate = true;
 	}
 	if (hsh.ucDepth >= nDepth || bMate) {
 		if (hsh.ucFlag == HASH_BETA) {

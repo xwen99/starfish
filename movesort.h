@@ -9,8 +9,7 @@
 const int LIMIT_DEPTH = 64;       // 搜索的极限深度
 const int SORT_VALUE_MAX = 65535; // 着法序列最大值
 
-// "nHistory"只在"movesort.cpp"一个模块中使用
-int nHistory[65536]; // 历史表
+extern int *nHistory; // 历史表
 
 // 走法排序阶段
 const int PHASE_HASH = 0;

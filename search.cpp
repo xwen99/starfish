@@ -6,6 +6,7 @@
 #include "book.h"
 #include "movesort.h"
 #include "search.h"
+#include <time.h>
 
 const int IID_DEPTH = 2;         // 内部迭代加深的深度
 const int SMP_DEPTH = 6;         // 并行搜索的深度
@@ -25,10 +26,12 @@ static struct {
 	int nUnchanged;                     // 未改变最佳着法的深度
 	uint16_t wmvKiller[LIMIT_DEPTH][2]; // 杀手着法表
 	HashStruct HashTable[HASH_SIZE];	// 置换表
+	int nHistoryTable[65536];			// 历史表
 	MoveSortStruct MoveSort;            // 根结点的着法序列
 } Search2;
 HashStruct* hshItems = Search2.HashTable;
 uint16_t (*wmvKiller)[2] = Search2.wmvKiller;
+int* nHistory = Search2.nHistoryTable;
 
 void BuildPos(PositionStruct& pos, const UcciCommStruct& UcciComm) {
 	int i, mv;
@@ -163,7 +166,7 @@ static int SearchQuiesc(PositionStruct& pos, int vlAlpha, int vlBeta) {
 	}
 }
 
-const bool NO_NULL = true; // "SearchPV()"的参数，是否禁止空着裁剪
+const bool NO_NULL = false; // "SearchPV()"的参数，是否禁止空着裁剪
 
 // 主变例搜索过程
 static int SearchPV(int vlAlpha, int vlBeta, int nDepth, bool bNoNull = false) {
@@ -173,8 +176,10 @@ static int SearchPV(int vlAlpha, int vlBeta, int nDepth, bool bNoNull = false) {
 	// 完全搜索例程包括以下几个步骤：
 
 	// 1. 在叶子结点处调用静态搜索；
+	
 	if (nDepth <= 0) {
 		__ASSERT(nDepth >= -NULL_DEPTH);
+//		return Evaluate(Search.pos);
 		return SearchQuiesc(Search.pos, vlAlpha, vlBeta);
 	}
 
@@ -329,10 +334,9 @@ static int SearchRoot(int nDepth) {
 
 // 主搜索例程
 void SearchMain(int nDepth) {
-	int i, vl, vlLast, nGenMoves;
+	int i, vl, vlLast;
 	int nCurrTimer, nLimitTimer;
 	int nBookMoves;
-	int mvs[MAX_GEN_MOVES];
 	BookStruct bks[MAX_GEN_MOVES];
 	// 主搜索例程包括以下几个步骤：
 
@@ -367,14 +371,11 @@ void SearchMain(int nDepth) {
 	}
 
 	// 3. 如果深度为零则返回静态搜索值
-	if (nDepth == 0) {
+	if (nDepth == 0 && Search.bDebug) {
 		printf("info depth 0 score %d\n", SearchQuiesc(Search.pos, -MATE_VALUE, MATE_VALUE));
 		fflush(stdout);
 		return;
 	}
-
-	// 4. 生成根结点的每个着法
-	nGenMoves = Search.pos.GenMoves(mvs);
 
 	// 5. 初始化时间和计数器
 	Search2.bStop  = false;

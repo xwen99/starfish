@@ -21,7 +21,8 @@ int main(void) {
 	Search.pos.nDistance = 0;
 	Search.bQuit = false;
 	Search.bDebug = true;
-	Search.bUseHash = Search.bUseBook = true;
+	Search.bUseHash = false;
+	Search.bUseBook = false;
 	PrintLn("ucciok");
 	// 以下是接收指令和提供对策的循环体
 	while (!Search.bQuit) {
@@ -36,6 +37,7 @@ int main(void) {
 			case UCCI_COMM_GO:
 				Search.nMaxTimer = Search.nProperTimer = UcciComm.nTime;
 				SearchMain(UCCI_MAX_DEPTH);
+		//		SearchMain();
 				break;
 			case UCCI_COMM_QUIT:
 				Search.bQuit = true;

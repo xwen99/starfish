@@ -45,7 +45,6 @@ const int FILE_LEFT = 3;
 const int FILE_RIGHT = 11;
 
 const int ADVANCED_VALUE = 3;  // 先行权分值
-const int RANDOM_MASK = 7;     // 随机性分值
 const int NULL_MARGIN = 400;   // 空步裁剪的子力边界
 
 extern const bool ccInBoard[256];    // 棋盘区域表
@@ -252,7 +251,7 @@ inline int DST(int mv) {
 
 // 根据起点和终点获得走法
 inline int MOVE(int sqSrc, int sqDst) {
-	return sqSrc + sqDst * 256;
+	return sqSrc + (sqDst << 8);
 }
 
 // 走法水平镜像

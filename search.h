@@ -25,5 +25,6 @@ void PopLeaf(PositionStruct& pos);
 
 // 搜索的启动过程
 void SearchMain(int nDepth);
+//void SearchMain(void);
 
 #endif
