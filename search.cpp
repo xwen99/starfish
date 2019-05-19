@@ -53,7 +53,7 @@ static bool Interrupt(void) {
 	}
 
 	UcciCommStruct UcciComm;
-	// 如果不是批处理模式，那么先调用UCCI解释程序，再判断是否中止
+	// 先调用UCCI解释程序，再判断是否中止
 	switch (BusyLine(UcciComm, Search.bDebug)) {
 		case UCCI_COMM_ISREADY:
 			// "isready"指令实际上没有意义
@@ -163,7 +163,7 @@ static int SearchQuiesc(PositionStruct& pos, int vlAlpha, int vlBeta) {
 	}
 }
 
-const bool NO_NULL = false; // "SearchPV()"的参数，是否禁止空着裁剪
+const bool NO_NULL = true; // "SearchPV()"的参数，是否禁止空着裁剪
 
 // 主变例搜索过程
 static int SearchPV(int vlAlpha, int vlBeta, int nDepth, bool bNoNull = false) {
@@ -318,7 +318,7 @@ static int SearchRoot(int nDepth) {
 				vlBest = vl;
 
 				// 7. 搜索到最佳着法时记录主要变例
-				Search2.mvResult = (uint32_t)mv;
+				Search2.mvResult = mv;
 			}
 		}
 	}
@@ -390,11 +390,6 @@ void SearchMain(int nDepth) {
 
 	// 6. 做迭代加深搜索
 	for (i = 1; i <= nDepth; i++) {
-		if (Search.bDebug) {
-			printf("info depth %d\n", i);
-			fflush(stdout);
-		}
-
 		// 8. 搜索根结点
 		vl = SearchRoot(i);
 		if (Search2.bStop) {
@@ -403,7 +398,10 @@ void SearchMain(int nDepth) {
 			}
 			break; // 没有跳出，则"vl"是可靠值
 		}
-
+		if (Search.bDebug) {
+			printf("info depth %d score %d\n", i, vl);
+			fflush(stdout);
+		}
 		nCurrTimer = (int)(GetTime() - Search2.llTime);
 		// 9. 如果搜索时间超过适当时限，则终止搜索
 		nLimitTimer = Search.nProperTimer;
@@ -429,4 +427,6 @@ void SearchMain(int nDepth) {
 	uint32_t result = MOVE_COORD(Search2.mvResult);
 	printf("bestmove %.4s\n", (const char*)& result);
 	fflush(stdout);
+	if (Search.bDebug)
+		Search.pos.DrawBoard();
 }

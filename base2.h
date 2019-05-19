@@ -21,11 +21,6 @@ inline void GetSelfExe(char* szDst) {
 	GetModuleFileName(NULL, szDst, PATH_MAX_CHAR);
 }
 
-inline void StartThread(void* ThreadEntry(void*), void* lpParameter) {
-	DWORD dwThreadId;
-	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadEntry, (LPVOID)lpParameter, 0, &dwThreadId);
-}
-
 inline void LocatePath(char* szDst, const char* szSrc) {
 	char* lpSeparator;
 	if (AbsolutePath(szSrc)) {

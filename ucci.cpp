@@ -134,6 +134,7 @@ UcciCommEnum BusyLine(UcciCommStruct& UcciComm, bool bDebug) {
 		}
 		else {
 			lp = szLineStr;
+			return UCCI_COMM_UNKNOWN;
 		}
 	}
 	else {

@@ -34,9 +34,9 @@ int main(void) {
 				Search.pos.nDistance = 0;
 				break;
 			case UCCI_COMM_GO:
-					Search.nMaxTimer = Search.nProperTimer = UcciComm.nTime;
-					SearchMain(UCCI_MAX_DEPTH);
-					break;
+				Search.nMaxTimer = Search.nProperTimer = UcciComm.nTime;
+				SearchMain(UCCI_MAX_DEPTH);
+				break;
 			case UCCI_COMM_QUIT:
 				Search.bQuit = true;
 				break;

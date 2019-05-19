@@ -1,3 +1,4 @@
+#include <cstdio>
 #include "base.h"
 #include "position.h"
 
@@ -124,26 +125,6 @@ static const int8_t ccKnightDelta[4][2] = { {-33, -31}, {-18, 14}, {-14, 18}, {3
 // 马被将军的步长，以仕(士)的步长作为马腿
 static const int8_t ccKnightCheckDelta[4][2] = { {-33, -18}, {-31, -14}, {14, 31}, {18, 33} };
 
-// 棋盘初始设置
-static const uint8_t cucpcStartup[256] = {
-  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-  0,  0,  0, 20, 19, 18, 17, 16, 17, 18, 19, 20,  0,  0,  0,  0,
-  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-  0,  0,  0,  0, 21,  0,  0,  0,  0,  0, 21,  0,  0,  0,  0,  0,
-  0,  0,  0, 22,  0, 22,  0, 22,  0, 22,  0, 22,  0,  0,  0,  0,
-  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-  0,  0,  0, 14,  0, 14,  0, 14,  0, 14,  0, 14,  0,  0,  0,  0,
-  0,  0,  0,  0, 13,  0,  0,  0,  0,  0, 13,  0,  0,  0,  0,  0,
-  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-  0,  0,  0, 12, 11, 10,  9,  8,  9, 10, 11, 12,  0,  0,  0,  0,
-  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0
-};
-
 // 子力位置价值表
 static const uint8_t cucvlPiecePos[7][256] = {
   { // 帅(将)
@@ -268,19 +249,6 @@ static const uint8_t cucvlPiecePos[7][256] = {
   }
 };
 
-// 初始化棋盘
-void PositionStruct::Startup(void) {
-	int sq, pc;
-	ClearBoard();
-	for (sq = 0; sq < 256; sq++) {
-		pc = cucpcStartup[sq];
-		if (pc != 0) {
-			AddPiece(sq, pc);
-		}
-	}
-	SetIrrev();
-}
-
 // 搬一步棋的棋子
 int PositionStruct::MovePiece(int mv) {
 	int sqSrc, sqDst, pc, pcCaptured;
@@ -345,8 +313,8 @@ int PositionStruct::GenMoves(int* mvs, bool bCapture) const {
 		}
 
 		// 2. 根据棋子确定走法
-		switch (pcSrc - pcSelfSide) {
-			case KING_TYPE:
+		switch (PIECE_INDEX(pcSrc)) {
+			case KING_FROM:
 				for (i = 0; i < 4; i++) {
 					sqDst = sqSrc + ccKingDelta[i];
 					if (!IN_FORT(sqDst)) {
@@ -359,7 +327,8 @@ int PositionStruct::GenMoves(int* mvs, bool bCapture) const {
 					}
 				}
 				break;
-			case ADVISOR_TYPE:
+			case ADVISOR_FROM:
+			case ADVISOR_TO:
 				for (i = 0; i < 4; i++) {
 					sqDst = sqSrc + ccAdvisorDelta[i];
 					if (!IN_FORT(sqDst)) {
@@ -372,7 +341,8 @@ int PositionStruct::GenMoves(int* mvs, bool bCapture) const {
 					}
 				}
 				break;
-			case BISHOP_TYPE:
+			case BISHOP_FROM:
+			case BISHOP_TO:
 				for (i = 0; i < 4; i++) {
 					sqDst = sqSrc + ccAdvisorDelta[i];
 					if (!(IN_BOARD(sqDst) && HOME_HALF(sqDst, sdPlayer) && ucpcSquares[sqDst] == 0)) {
@@ -386,7 +356,8 @@ int PositionStruct::GenMoves(int* mvs, bool bCapture) const {
 					}
 				}
 				break;
-			case KNIGHT_TYPE:
+			case KNIGHT_FROM:
+			case KNIGHT_TO:
 				for (i = 0; i < 4; i++) {
 					sqDst = sqSrc + ccKingDelta[i];
 					if (ucpcSquares[sqDst] != 0) {
@@ -405,7 +376,8 @@ int PositionStruct::GenMoves(int* mvs, bool bCapture) const {
 					}
 				}
 				break;
-			case ROOK_TYPE:
+			case ROOK_FROM:
+			case ROOK_TO:
 				for (i = 0; i < 4; i++) {
 					nDelta = ccKingDelta[i];
 					sqDst = sqSrc + nDelta;
@@ -428,7 +400,8 @@ int PositionStruct::GenMoves(int* mvs, bool bCapture) const {
 					}
 				}
 				break;
-			case CANNON_TYPE:
+			case CANNON_FROM:
+			case CANNON_TO:
 				for (i = 0; i < 4; i++) {
 					nDelta = ccKingDelta[i];
 					sqDst = sqSrc + nDelta;
@@ -459,7 +432,7 @@ int PositionStruct::GenMoves(int* mvs, bool bCapture) const {
 					}
 				}
 				break;
-			case PAWN_TYPE:
+			default:
 				sqDst = SQUARE_FORWARD(sqSrc, sdPlayer);
 				if (IN_BOARD(sqDst)) {
 					pcDst = ucpcSquares[sqDst];
@@ -508,19 +481,24 @@ bool PositionStruct::LegalMove(int mv) const {
 	}
 
 	// 3. 根据棋子的类型检查走法是否合理
-	switch (pcSrc - pcSelfSide) {
-		case KING_TYPE:
+	switch (PIECE_INDEX(pcSrc)) {
+		case KING_FROM:
 			return IN_FORT(sqDst) && KING_SPAN(sqSrc, sqDst);
-		case ADVISOR_TYPE:
+		case ADVISOR_FROM:
+		case ADVISOR_TO:
 			return IN_FORT(sqDst) && ADVISOR_SPAN(sqSrc, sqDst);
-		case BISHOP_TYPE:
+		case BISHOP_FROM:
+		case BISHOP_TO:
 			return SAME_HALF(sqSrc, sqDst) && BISHOP_SPAN(sqSrc, sqDst) &&
 				ucpcSquares[BISHOP_PIN(sqSrc, sqDst)] == 0;
-		case KNIGHT_TYPE:
+		case KNIGHT_FROM:
+		case KNIGHT_TO:
 			sqPin = KNIGHT_PIN(sqSrc, sqDst);
 			return sqPin != sqSrc && ucpcSquares[sqPin] == 0;
-		case ROOK_TYPE:
-		case CANNON_TYPE:
+		case ROOK_FROM:
+		case ROOK_TO:
+		case CANNON_FROM:
+		case CANNON_TO:
 			if (SAME_RANK(sqSrc, sqDst)) {
 				nDelta = (sqDst < sqSrc ? -1 : 1);
 			}
@@ -535,9 +513,9 @@ bool PositionStruct::LegalMove(int mv) const {
 				sqPin += nDelta;
 			}
 			if (sqPin == sqDst) {
-				return pcDst == 0 || pcSrc - pcSelfSide == ROOK_TYPE;
+				return pcDst == 0 || pcSrc - pcSelfSide == ROOK_FROM || pcSrc - pcSelfSide == ROOK_TO;
 			}
-			else if (pcDst != 0 && pcSrc - pcSelfSide == CANNON_TYPE) {
+			else if (pcDst != 0 && (pcSrc - pcSelfSide == CANNON_FROM || pcSrc - pcSelfSide == CANNON_TO)) {
 				sqPin += nDelta;
 				while (sqPin != sqDst && ucpcSquares[sqPin] == 0) {
 					sqPin += nDelta;
@@ -547,13 +525,11 @@ bool PositionStruct::LegalMove(int mv) const {
 			else {
 				return false;
 			}
-		case PAWN_TYPE:
+		default:
 			if (AWAY_HALF(sqDst, sdPlayer) && (sqDst == sqSrc - 1 || sqDst == sqSrc + 1)) {
 				return true;
 			}
 			return sqDst == SQUARE_FORWARD(sqSrc, sdPlayer);
-		default:
-			return false;
 	}
 }
 
@@ -564,62 +540,64 @@ bool PositionStruct::Checked() const {
 	pcSelfSide = SIDE_TAG(sdPlayer);
 	pcOppSide = OPP_SIDE_TAG(sdPlayer);
 	// 找到棋盘上的帅(将)，再做以下判断：
+	sqSrc = ucsqPieces[pcSelfSide];
+	if (sqSrc == 0) {
+		return 0;
+	}
 
-	for (sqSrc = 0; sqSrc < 256; sqSrc++) {
-		if (ucpcSquares[sqSrc] != pcSelfSide + KING_TYPE) {
-			continue;
-		}
-
-		// 1. 判断是否被对方的兵(卒)将军
-		if (ucpcSquares[SQUARE_FORWARD(sqSrc, sdPlayer)] == pcOppSide + PAWN_TYPE) {
+	// 1. 判断是否被对方的兵(卒)将军
+	pcDst = ucpcSquares[SQUARE_FORWARD(sqSrc, sdPlayer)];
+	if ((pcDst & pcOppSide) != 0 && PIECE_INDEX(pcDst) >= PAWN_FROM) {
+		return true;
+	}
+	for (nDelta = -1; nDelta <= 1; nDelta += 2) {
+		pcDst = ucpcSquares[sqSrc + nDelta];
+		if ((pcDst & pcOppSide) != 0 && PIECE_INDEX(pcDst) >= PAWN_FROM) {
 			return true;
 		}
-		for (nDelta = -1; nDelta <= 1; nDelta += 2) {
-			if (ucpcSquares[sqSrc + nDelta] == pcOppSide + PAWN_TYPE) {
+	}
+
+	// 2. 判断是否被对方的马将军(以仕(士)的步长当作马腿)
+	for (i = 0; i < 4; i++) {
+		if (ucpcSquares[sqSrc + ccAdvisorDelta[i]] != 0) {
+			continue;
+		}
+		for (j = 0; j < 2; j++) {
+			pcDst = ucpcSquares[sqSrc + ccKnightCheckDelta[i][j]];
+			if ((pcDst & pcOppSide) != 0 && (PIECE_INDEX(pcDst) == KNIGHT_FROM 
+				|| PIECE_INDEX(pcDst) == KNIGHT_TO)) {
 				return true;
 			}
 		}
+	}
 
-		// 2. 判断是否被对方的马将军(以仕(士)的步长当作马腿)
-		for (i = 0; i < 4; i++) {
-			if (ucpcSquares[sqSrc + ccAdvisorDelta[i]] != 0) {
-				continue;
-			}
-			for (j = 0; j < 2; j++) {
-				pcDst = ucpcSquares[sqSrc + ccKnightCheckDelta[i][j]];
-				if (pcDst == pcOppSide + KNIGHT_TYPE) {
+	// 3. 判断是否被对方的车或炮将军(包括将帅对脸)
+	for (i = 0; i < 4; i++) {
+		nDelta = ccKingDelta[i];
+		sqDst = sqSrc + nDelta;
+		while (IN_BOARD(sqDst)) {
+			pcDst = ucpcSquares[sqDst];
+			if (pcDst != 0) {
+				if ((pcDst & pcOppSide) != 0 && (PIECE_INDEX(pcDst) == ROOK_FROM 
+					|| PIECE_INDEX(pcDst) == ROOK_TO || PIECE_INDEX(pcDst) == KING_FROM)) {
 					return true;
 				}
-			}
-		}
-
-		// 3. 判断是否被对方的车或炮将军(包括将帅对脸)
-		for (i = 0; i < 4; i++) {
-			nDelta = ccKingDelta[i];
-			sqDst = sqSrc + nDelta;
-			while (IN_BOARD(sqDst)) {
-				pcDst = ucpcSquares[sqDst];
-				if (pcDst != 0) {
-					if (pcDst == pcOppSide + ROOK_TYPE || pcDst == pcOppSide + KING_TYPE) {
-						return true;
-					}
-					break;
-				}
-				sqDst += nDelta;
+				break;
 			}
 			sqDst += nDelta;
-			while (IN_BOARD(sqDst)) {
-				int pcDst = ucpcSquares[sqDst];
-				if (pcDst != 0) {
-					if (pcDst == pcOppSide + CANNON_TYPE) {
-						return true;
-					}
-					break;
-				}
-				sqDst += nDelta;
-			}
 		}
-		return false;
+		sqDst += nDelta;
+		while (IN_BOARD(sqDst)) {
+			int pcDst = ucpcSquares[sqDst];
+			if (pcDst != 0) {
+				if ((pcDst & pcOppSide) != 0 && (PIECE_INDEX(pcDst) == CANNON_FROM
+					|| PIECE_INDEX(pcDst) == CANNON_TO)) {
+					return true;
+				}
+				break;
+			}
+			sqDst += nDelta;
+		}
 	}
 	return false;
 }
@@ -672,7 +650,7 @@ int PositionStruct::RepStatus(int nRecur) const {
 
 /* 棋子序号对应的棋子类型
  *
- * ElephantEye的棋子序号从0到47，其中0到15不用，16到31表示红子，32到47表示黑子。
+ * 棋子序号从0到47，其中0到15不用，16到31表示红子，32到47表示黑子。
  * 每方的棋子顺序依次是：帅仕仕相相马马车车炮炮兵兵兵兵兵(将士士象象马马车车炮炮卒卒卒卒卒)
  * 提示：判断棋子是红子用"pc < 32"，黑子用"pc >= 32"
  */
@@ -686,9 +664,6 @@ inline char PIECE_BYTE(int pt) {
 	return cszPieceBytes[pt];
 }
 
-inline int PIECE_TYPE(int pc) {
-	return cnPieceTypes[pc];
-}
 // FEN串中棋子标识，注意这个函数只能识别大写字母，因此用小写字母时，首先必须转换为大写
 int FenPiece(int nArg) {
 	switch (nArg) {
@@ -848,4 +823,25 @@ void PositionStruct::Mirror(PositionStruct & posMirror) const {
 		posMirror.ChangeSide();
 	}
 	posMirror.SetIrrev();
+}
+
+// 绘图
+void PositionStruct::DrawBoard()
+{
+	int i, j, pc;
+	char c;
+	for (i = RANK_TOP; i <= RANK_BOTTOM; i++) {
+		for (j = FILE_LEFT; j <= FILE_RIGHT; j++) {
+			pc = ucpcSquares[COORD_XY(j, i)];
+			if (pc == 0) {
+				printf("+");
+			}
+			else {
+				c = PIECE_BYTE(PIECE_TYPE(pc)) + (pc < 16 ? 0 : 'a' - 'A');
+				printf("%c", c);
+			}
+		}
+		printf("\n");
+	}
+
 }

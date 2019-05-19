@@ -53,6 +53,7 @@ extern const bool ccInFort[256];     // 城池区域表
 extern const int8_t ccLegalSpan[512];   // 合理着法跨度表
 extern const int8_t ccKnightPin[512];   // 马腿表
 extern const uint8_t cucvlPiecePos[7][256];	// 子力位置价值表
+extern const int cnPieceTypes[48];	// 棋子序号对应的棋子类型
 
 // "GenMoves"参数
 const bool GEN_CAPTURE = true;
@@ -62,6 +63,15 @@ const char* const cszStartFen = "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1
 
 // 棋子类型对应的棋子符号
 const char* const cszPieceBytes = "KABNRCP";
+
+// 棋子类型
+inline int PIECE_TYPE(int pc) {
+	return cnPieceTypes[pc];
+}
+// 棋子下标
+inline int PIECE_INDEX(int pc) {
+	return pc & 15;
+}
 
 // 判断棋子是否在棋盘中
 inline bool IN_BOARD(int sq) {
@@ -108,9 +118,12 @@ inline int MIRROR_SQUARE(int sq) {
 	return COORD_XY(FILE_FLIP(FILE_X(sq)), RANK_Y(sq));
 }
 
-// 格子水平镜像
 inline int SQUARE_FORWARD(int sq, int sd) {
 	return sq - 16 + (sd << 5);
+}
+
+inline int SQUARE_BACKWARD(int sq, int sd) {
+	return sq + 16 - (sd << 5);
 }
 
 // 走法是否符合帅(将)的步长
@@ -163,14 +176,12 @@ inline bool SAME_FILE(int sqSrc, int sqDst) {
 	return ((sqSrc ^ sqDst) & 0x0f) == 0;
 }
 
-// 获得红黑标记(红子是8，黑子是16)
 inline int SIDE_TAG(int sd) {
-	return 8 + (sd << 3);
+	return 16 + (sd << 4);
 }
 
-// 获得对方红黑标记
 inline int OPP_SIDE_TAG(int sd) {
-	return 16 - (sd << 3);
+	return 32 - (sd << 4);
 }
 
 struct ZobristStruct {
@@ -295,35 +306,38 @@ struct PositionStruct {
 		mvsList[0].Set(0, 0, Checked(), zobr.dwKey);
 		nMoveNum = 1;
 	}
-	void Startup(void);             // 初始化棋盘
 	void ChangeSide(void) {         // 交换走子方
 		sdPlayer = 1 - sdPlayer;
 		zobr.Xor(Zobrist.Player);
 	}
 	void AddPiece(int sq, int pc) { // 在棋盘上放一枚棋子
+		int pt;
 		ucpcSquares[sq] = pc;
 		ucsqPieces[pc] = sq;
+		pt = PIECE_TYPE(pc);
 		// 红方加分，黑方(注意"cucvlPiecePos"取值要颠倒)减分
-		if (pc < 16) {
-			vlWhite += cucvlPiecePos[pc - 8][sq];
-			zobr.Xor(Zobrist.Table[pc - 8][sq]);
+		if (pc < 32) {
+			vlWhite += cucvlPiecePos[pt][sq];
+			zobr.Xor(Zobrist.Table[pt][sq]);
 		}
 		else {
-			vlBlack += cucvlPiecePos[pc - 16][SQUARE_FLIP(sq)];
-			zobr.Xor(Zobrist.Table[pc - 9][sq]);
+			vlBlack += cucvlPiecePos[pt][SQUARE_FLIP(sq)];
+			zobr.Xor(Zobrist.Table[pt + 7][sq]);
 		}
 	}
 	void DelPiece(int sq, int pc) { // 从棋盘上拿走一枚棋子
+		int pt;
 		ucpcSquares[sq] = 0;
 		ucsqPieces[pc] = 0;
+		pt = PIECE_TYPE(pc);
 		// 红方减分，黑方(注意"cucvlPiecePos"取值要颠倒)加分
-		if (pc < 16) {
-			vlWhite -= cucvlPiecePos[pc - 8][sq];
-			zobr.Xor(Zobrist.Table[pc - 8][sq]);
+		if (pc < 32) {
+			vlWhite -= cucvlPiecePos[pt][sq];
+			zobr.Xor(Zobrist.Table[pt][sq]);
 		}
 		else {
-			vlBlack -= cucvlPiecePos[pc - 16][SQUARE_FLIP(sq)];
-			zobr.Xor(Zobrist.Table[pc - 9][sq]);
+			vlBlack -= cucvlPiecePos[pt][SQUARE_FLIP(sq)];
+			zobr.Xor(Zobrist.Table[pt + 7][sq]);
 		}
 	}
 	int Evaluate(void) const {      // 局面评价函数
@@ -379,6 +393,7 @@ struct PositionStruct {
 	void FromFen(const char* szFen); // FEN串识别
 	void ToFen(char* szFen) const;   // 生成FEN串
 	void Mirror(PositionStruct & posMirror) const; // 对局面镜像
+	void DrawBoard();	// 打印局面
 };
 
 #endif
