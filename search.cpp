@@ -347,7 +347,7 @@ void SearchMain(int nDepth) {
 	// 2. 从开局库中搜索着法
 	if (Search.bUseBook) {
 		// a. 获取开局库中的所有走法
-		nBookMoves = GetBookMoves(Search.pos, Search.szBookFile, bks);
+		nBookMoves = GetBookMoves(Search.pos, bks);
 		if (nBookMoves > 0) {
 			vl = 0;
 			for (i = 0; i < nBookMoves; i++) {

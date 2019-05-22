@@ -1,27 +1,23 @@
 #include "position.h"
 #include "book.h"
 
-int GetBookMoves(const PositionStruct& pos, const char* szBookFile, BookStruct* lpbks) {
-	BookFileStruct BookFile;
+int GetBookMoves(const PositionStruct& pos, BookStruct* lpbks) {
+	BookDataStruct BookData;
 	PositionStruct posScan;
 	BookStruct bk;
 	int nScan, nLow, nHigh, nPtr;
 	int i, j, nMoves;
 	// 从开局库中搜索着法的例程，有以下几个步骤：
+	BookData.init();
 
-	// 1. 打开开局库，如果打开失败，则返回空值；
-	if (!BookFile.Open(szBookFile)) {
-		return 0;
-	}
-
-	// 2. 用拆半查找法搜索局面；
+	// 1. 用拆半查找法搜索局面；
 	posScan = pos;
 	for (nScan = 0; nScan < 2; nScan++) {
 		nPtr = nLow = 0;
-		nHigh = BookFile.nLen - 1;
+		nHigh = BookData.nLen - 1;
 		while (nLow <= nHigh) {
 			nPtr = (nLow + nHigh) / 2;
-			BookFile.Read(bk, nPtr);
+			BookData.Read(bk, nPtr);
 			if (BOOK_POS_CMP(bk, posScan) < 0) {
 				nLow = nPtr + 1;
 			}
@@ -39,25 +35,24 @@ int GetBookMoves(const PositionStruct& pos, const char* szBookFile, BookStruct* 
 		pos.Mirror(posScan);
 	}
 
-	// 3. 如果不到局面，则返回空着；
+	// 2. 如果不到局面，则返回空着；
 	if (nScan == 2) {
-		BookFile.Close();
 		return 0;
 	}
-	__ASSERT_BOUND(0, nPtr, BookFile.nLen - 1);
+	__ASSERT_BOUND(0, nPtr, BookData.nLen - 1);
 
-	// 4. 如果找到局面，则向前查找第一个着法；
+	// 3. 如果找到局面，则向前查找第一个着法；
 	for (nPtr--; nPtr >= 0; nPtr--) {
-		BookFile.Read(bk, nPtr);
+		BookData.Read(bk, nPtr);
 		if (BOOK_POS_CMP(bk, posScan) < 0) {
 			break;
 		}
 	}
 
-	// 5. 向后依次读入属于该局面的每个着法；
+	// 4. 向后依次读入属于该局面的每个着法；
 	nMoves = 0;
-	for (nPtr++; nPtr < BookFile.nLen; nPtr++) {
-		BookFile.Read(bk, nPtr);
+	for (nPtr++; nPtr < BookData.nLen; nPtr++) {
+		BookData.Read(bk, nPtr);
 		if (BOOK_POS_CMP(bk, posScan) > 0) {
 			break;
 		}
@@ -72,9 +67,8 @@ int GetBookMoves(const PositionStruct& pos, const char* szBookFile, BookStruct* 
 			}
 		}
 	}
-	BookFile.Close();
 
-	// 6. 对着法按分值排序
+	// 5. 对着法按分值排序
 	for (i = 0; i < nMoves - 1; i++) {
 		for (j = nMoves - 1; j > i; j--) {
 			if (lpbks[j - 1].wvl < lpbks[j].wvl) {
