@@ -74,19 +74,19 @@ static bool Interrupt(void) {
 
 // 无害裁剪
 static int HarmlessPruning(const PositionStruct& pos, int vlBeta) {
-	int vl, vlRep;
+	//int vl, vlRep;
 
-	// 1. 杀棋步数裁剪；
-	vl = pos.nDistance - MATE_VALUE;
-	if (vl >= vlBeta) {
-		return vl;
-	}
+	//// 1. 杀棋步数裁剪；
+	//vl = pos.nDistance - MATE_VALUE;
+	//if (vl >= vlBeta) {
+	//	return vl;
+	//}
 
-	// 2. 重复裁剪；
-	vlRep = pos.RepStatus();
-	if (vlRep > 0) {
-		return pos.RepValue(vlRep);
-	}
+	//// 2. 重复裁剪；
+	//vlRep = pos.RepStatus();
+	//if (vlRep > 0) {
+	//	return pos.RepValue(vlRep);
+	//}
 
 	return -MATE_VALUE;
 }
@@ -166,7 +166,7 @@ static int SearchQuiesc(PositionStruct& pos, int vlAlpha, int vlBeta) {
 	}
 }
 
-const bool NO_NULL = false; // "SearchPV()"的参数，是否禁止空着裁剪
+const bool NO_NULL = true; // "SearchPV()"的参数，是否禁止空着裁剪
 
 // 主变例搜索过程
 static int SearchPV(int vlAlpha, int vlBeta, int nDepth, bool bNoNull = false) {
@@ -179,8 +179,8 @@ static int SearchPV(int vlAlpha, int vlBeta, int nDepth, bool bNoNull = false) {
 	
 	if (nDepth <= 0) {
 		__ASSERT(nDepth >= -NULL_DEPTH);
-//		return Evaluate(Search.pos);
-		return SearchQuiesc(Search.pos, vlAlpha, vlBeta);
+		return Evaluate(Search.pos);
+//		return SearchQuiesc(Search.pos, vlAlpha, vlBeta);
 	}
 
 	// 2. 无害裁剪；
@@ -371,9 +371,13 @@ void SearchMain(int nDepth) {
 	}
 
 	// 3. 如果深度为零则返回静态搜索值
-	if (nDepth == 0 && Search.bDebug) {
-		printf("info depth 0 score %d\n", SearchQuiesc(Search.pos, -MATE_VALUE, MATE_VALUE));
-		fflush(stdout);
+	if (nDepth == 0) {
+//		vl = SearchQuiesc(Search.pos, -MATE_VALUE, MATE_VALUE);
+		vl = Evaluate(Search.pos);
+		if (Search.bDebug) {
+			printf("info depth 0 score %d\n", vl);
+			fflush(stdout);
+		}
 		return;
 	}
 
