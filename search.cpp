@@ -6,7 +6,6 @@
 #include "book.h"
 #include "movesort.h"
 #include "search.h"
-#include <time.h>
 
 const int IID_DEPTH = 2;         // 内部迭代加深的深度
 const int SMP_DEPTH = 6;         // 并行搜索的深度
@@ -74,19 +73,13 @@ static bool Interrupt(void) {
 
 // 无害裁剪
 static int HarmlessPruning(const PositionStruct& pos, int vlBeta) {
-	//int vl, vlRep;
+	int vlRep;
 
-	//// 1. 杀棋步数裁剪；
-	//vl = pos.nDistance - MATE_VALUE;
-	//if (vl >= vlBeta) {
-	//	return vl;
-	//}
-
-	//// 2. 重复裁剪；
-	//vlRep = pos.RepStatus();
-	//if (vlRep > 0) {
-	//	return pos.RepValue(vlRep);
-	//}
+	// 重复裁剪；
+	vlRep = pos.RepStatus();
+	if (vlRep > 0) {
+		return pos.RepValue(vlRep);
+	}
 
 	return -MATE_VALUE;
 }
@@ -433,5 +426,5 @@ void SearchMain(int nDepth) {
 	printf("bestmove %.4s\n", (const char*)& result);
 	fflush(stdout);
 	if (Search.bDebug)
-		Search.pos.DrawBoard();
+		Search.pos.DrawBoard(Search2.mvResult);
 }

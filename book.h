@@ -1,9 +1,9 @@
-#ifndef BOOK_H
-#define BOOK_H
-
 #include <cstdio>
 #include "base.h"
 #include "position.h"
+
+#ifndef BOOK_H
+#define BOOK_H
 
 struct BookStruct {
 	union {

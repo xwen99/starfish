@@ -206,24 +206,13 @@ struct ZobristStruct {
 }; // zobr
 
 // Zobrist表
-static struct {
+extern struct ZobristTable{
 	ZobristStruct Player;
 	ZobristStruct Table[14][256];
 } Zobrist;
 
 // 初始化Zobrist表
-static void InitZobrist(void) {
-	int i, j;
-	RC4Struct rc4;
-
-	rc4.InitZero();
-	Zobrist.Player.InitRC4(rc4);
-	for (i = 0; i < 14; i++) {
-		for (j = 0; j < 256; j++) {
-			Zobrist.Table[i][j].InitRC4(rc4);
-		}
-	}
-}
+void InitZobrist(void);
 
 // 历史走法信息
 struct MoveStruct {
@@ -392,7 +381,7 @@ struct PositionStruct {
 	void FromFen(const char* szFen); // FEN串识别
 	void ToFen(char* szFen) const;   // 生成FEN串
 	void Mirror(PositionStruct & posMirror) const; // 对局面镜像
-	void DrawBoard();	// 打印局面
+	void DrawBoard(uint32_t mv = NULL);	// 打印局面
 };
 
 #endif

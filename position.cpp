@@ -260,6 +260,23 @@ const int cnPieceTypes[48] = {
   0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 6, 6, 6,
   0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 6, 6, 6
 };
+
+ZobristTable Zobrist;
+
+// 初始化Zobrist表
+void InitZobrist(void) {
+	int i, j;
+	RC4Struct rc4;
+
+	rc4.InitZero();
+	Zobrist.Player.InitRC4(rc4);
+	for (i = 0; i < 14; i++) {
+		for (j = 0; j < 256; j++) {
+			Zobrist.Table[i][j].InitRC4(rc4);
+		}
+	}
+}
+
 // 搬一步棋的棋子
 int PositionStruct::MovePiece(int mv) {
 	int sqSrc, sqDst, pc, pcCaptured;
@@ -638,8 +655,8 @@ int PositionStruct::RepStatus(int nRecur) const {
 	const MoveStruct* lpmvs;
 
 	bSelfSide = false;
-	bPerpCheck = bOppPerpCheck = true;
-	lpmvs = mvsList + nMoveNum - 1;
+	bPerpCheck = bOppPerpCheck = true;	// 长将标记
+	lpmvs = mvsList + nMoveNum - 1;	// 指向历史表中最后节点
 	while (lpmvs->wmv != 0 && lpmvs->ucpcCaptured == 0) {
 		if (bSelfSide) {
 			bPerpCheck = bPerpCheck && lpmvs->ucbCheck;
@@ -825,10 +842,15 @@ void PositionStruct::Mirror(PositionStruct & posMirror) const {
 }
 
 // 绘图
-void PositionStruct::DrawBoard()
+void PositionStruct::DrawBoard(uint32_t mv)
 {
 	int i, j, pc;
 	char c;
+	if (mv != NULL) {
+		pc = ucpcSquares[SRC(mv)];
+		ucpcSquares[SRC(mv)] = 0;
+		ucpcSquares[DST(mv)] = pc;
+	}
 	for (i = RANK_TOP; i <= RANK_BOTTOM; i++) {
 		for (j = FILE_LEFT; j <= FILE_RIGHT; j++) {
 			pc = ucpcSquares[COORD_XY(j, i)];
@@ -836,11 +858,10 @@ void PositionStruct::DrawBoard()
 				printf("+");
 			}
 			else {
-				c = PIECE_BYTE(PIECE_TYPE(pc)) + (pc < 16 ? 0 : 'a' - 'A');
+				c = PIECE_BYTE(PIECE_TYPE(pc)) + (pc < 32 ? 0 : 'a' - 'A');
 				printf("%c", c);
 			}
 		}
 		printf("\n");
 	}
-
 }

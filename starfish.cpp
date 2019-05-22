@@ -17,6 +17,7 @@ int main(void) {
 		return 0;
 	}
 	LocatePath(Search.szBookFile, "BOOK.DAT");
+	InitZobrist();
 	Search.pos.FromFen(cszStartFen);
 	Search.pos.nDistance = 0;
 	Search.bQuit = false;
