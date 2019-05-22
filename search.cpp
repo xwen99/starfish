@@ -159,11 +159,11 @@ static int SearchQuiesc(PositionStruct& pos, int vlAlpha, int vlBeta) {
 	}
 }
 
-const bool NO_NULL = true; // "SearchPV()"的参数，是否禁止空着裁剪
+const bool NO_NULL = false; // "SearchPV()"的参数，是否禁止空着裁剪
 
 // 主变例搜索过程
 static int SearchPV(int vlAlpha, int vlBeta, int nDepth, bool bNoNull = false) {
-	int nNewDepth, nHashFlag, vlBest, vl;
+	int nNewDepth, nHashFlag, vlBest, vl, nCurrTimer;
 	int mvBest, mvHash, mv;
 	MoveSortStruct MoveSort;
 	// 完全搜索例程包括以下几个步骤：
@@ -172,8 +172,8 @@ static int SearchPV(int vlAlpha, int vlBeta, int nDepth, bool bNoNull = false) {
 	
 	if (nDepth <= 0) {
 		__ASSERT(nDepth >= -NULL_DEPTH);
-		return Evaluate(Search.pos);
-//		return SearchQuiesc(Search.pos, vlAlpha, vlBeta);
+//		return Evaluate(Search.pos);
+		return SearchQuiesc(Search.pos, vlAlpha, vlBeta);
 	}
 
 	// 2. 无害裁剪；
@@ -259,6 +259,11 @@ static int SearchPV(int vlAlpha, int vlBeta, int nDepth, bool bNoNull = false) {
 					nHashFlag = HASH_PV;
 				}
 			}
+
+			nCurrTimer = (int)(GetTime() - Search2.llTime);
+			if (nCurrTimer > Search.nMaxTimer) {
+				Search2.bStop = true;
+			}
 		}
 	}
 
@@ -278,7 +283,7 @@ static int SearchPV(int vlAlpha, int vlBeta, int nDepth, bool bNoNull = false) {
 
 // 根结点搜索例程
 static int SearchRoot(int nDepth) {
-	int nNewDepth, vlBest, vl, mv;
+	int nNewDepth, vlBest, vl, mv, nCurrTimer;
 	// 根结点搜索例程包括以下几个步骤：
 
 	// 1. 初始化
@@ -318,6 +323,12 @@ static int SearchRoot(int nDepth) {
 				// 7. 搜索到最佳着法时记录主要变例
 				Search2.mvResult = mv;
 			}
+
+			nCurrTimer = (int)(GetTime() - Search2.llTime);
+			if (nCurrTimer > Search.nMaxTimer) {
+				Search2.bStop = true;
+			}
+
 		}
 	}
 	RecordHash(Search.pos, HASH_PV, vlBest, nDepth, Search2.mvResult);
@@ -355,8 +366,13 @@ void SearchMain(int nDepth) {
 			// c. 如果开局库中的着法构成循环局面，那么不走这个着法
 			Search.pos.MakeMove(bks[i].wmv);
 			if (Search.pos.RepStatus(3) == 0) {
-				Search2.mvResult = MOVE_COORD(bks[i].wmv);
+				Search2.mvResult = bks[i].wmv;
 				Search.pos.UndoMakeMove();
+				uint32_t result = MOVE_COORD(Search2.mvResult);
+				printf("bestmove %.4s\n", (const char*)& result);
+				fflush(stdout);
+				if (Search.bDebug)
+					Search.pos.DrawBoard(Search2.mvResult);
 				return;
 			}
 			Search.pos.UndoMakeMove();
@@ -365,8 +381,8 @@ void SearchMain(int nDepth) {
 
 	// 3. 如果深度为零则返回静态搜索值
 	if (nDepth == 0) {
-//		vl = SearchQuiesc(Search.pos, -MATE_VALUE, MATE_VALUE);
-		vl = Evaluate(Search.pos);
+		vl = SearchQuiesc(Search.pos, -MATE_VALUE, MATE_VALUE);
+//		vl = Evaluate(Search.pos);
 		if (Search.bDebug) {
 			printf("info depth 0 score %d\n", vl);
 			fflush(stdout);
@@ -402,7 +418,7 @@ void SearchMain(int nDepth) {
 		}
 		nCurrTimer = (int)(GetTime() - Search2.llTime);
 		// 9. 如果搜索时间超过适当时限，则终止搜索
-		nLimitTimer = Search.nProperTimer;
+		nLimitTimer = Search.nMaxTimer;
 		// a. 如果当前搜索值没有落后前一层很多，那么适当时限减半
 		nLimitTimer = (vl + DROPDOWN_VALUE >= vlLast ? nLimitTimer / 2 : nLimitTimer);
 		// b. 如果最佳着法连续多层没有变化，那么适当时限减半

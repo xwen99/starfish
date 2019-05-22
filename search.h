@@ -11,7 +11,7 @@ struct SearchStruct {
 	bool bDebug;					   // 是否调试模式
 	bool bUseHash, bUseBook;           // 是否使用置换表裁剪和开局库
 	RC4Struct rc4Random;               // 随机数
-	int nProperTimer, nMaxTimer;       // 计划使用时间
+	int nMaxTimer;					   // 最大使用时间
 	char szBookFile[1024];             // 开局库
 };
 
