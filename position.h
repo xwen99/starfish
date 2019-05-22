@@ -63,6 +63,10 @@ const char* const cszStartFen = "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1
 // 棋子类型对应的棋子符号
 const char* const cszPieceBytes = "KABNRCP";
 
+// 棋子类型对应的中文棋子符号标识
+const char* const cszPieceBytesInChineseBlack[7] = { "将","士","象","碼","車","砲","卒" };
+const char* const cszPieceBytesInChineseRed[7] = { "帅","仕","相","马","车","炮","兵" };
+
 // 棋子类型
 inline int PIECE_TYPE(int pc) {
 	return cnPieceTypes[pc];

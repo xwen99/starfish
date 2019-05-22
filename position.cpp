@@ -562,15 +562,16 @@ bool PositionStruct::LegalMove(int mv) const {
 }
 
 // 判断是否被将军
+// 注意：pc代表棋子编号，sq代表棋子位置
 bool PositionStruct::Checked() const {
 	int i, j, sqSrc, sqDst;
 	int pcSelfSide, pcOppSide, pcDst, nDelta;
-	pcSelfSide = SIDE_TAG(sdPlayer);
-	pcOppSide = OPP_SIDE_TAG(sdPlayer);
+	pcSelfSide = SIDE_TAG(sdPlayer);	//16 = 6'b010000, 16~31 = 6'b01xxxx
+	pcOppSide = OPP_SIDE_TAG(sdPlayer);	//32 = 6'b100000, 32~47 = 6'b10xxxx, &运算非零判断同侧
 	// 找到棋盘上的帅(将)，再做以下判断：
 	sqSrc = ucsqPieces[pcSelfSide];
 	if (sqSrc == 0) {
-		return 0;
+		return false;
 	}
 
 	// 1. 判断是否被对方的兵(卒)将军
@@ -605,7 +606,7 @@ bool PositionStruct::Checked() const {
 		sqDst = sqSrc + nDelta;
 		while (IN_BOARD(sqDst)) {
 			pcDst = ucpcSquares[sqDst];
-			if (pcDst != 0) {
+			if (pcDst != 0) {	//扫描线上第一个棋子
 				if ((pcDst & pcOppSide) != 0 && (PIECE_INDEX(pcDst) == ROOK_FROM 
 					|| PIECE_INDEX(pcDst) == ROOK_TO || PIECE_INDEX(pcDst) == KING_FROM)) {
 					return true;
@@ -617,7 +618,7 @@ bool PositionStruct::Checked() const {
 		sqDst += nDelta;
 		while (IN_BOARD(sqDst)) {
 			int pcDst = ucpcSquares[sqDst];
-			if (pcDst != 0) {
+			if (pcDst != 0) {	//扫描线上第二个棋子
 				if ((pcDst & pcOppSide) != 0 && (PIECE_INDEX(pcDst) == CANNON_FROM
 					|| PIECE_INDEX(pcDst) == CANNON_TO)) {
 					return true;
@@ -842,10 +843,17 @@ void PositionStruct::Mirror(PositionStruct & posMirror) const {
 }
 
 // 绘图
+inline const char* PIECE_BYTE_IN_CHINESE(int pt, bool type) {
+	if (type == true)
+		return cszPieceBytesInChineseRed[pt];
+	else 
+		return cszPieceBytesInChineseBlack[pt];
+}
+
 void PositionStruct::DrawBoard(uint32_t mv)
 {
 	int i, j, pc;
-	char c;
+	const char* c;
 	if (mv != NULL) {
 		pc = ucpcSquares[SRC(mv)];
 		ucpcSquares[SRC(mv)] = 0;
@@ -855,13 +863,14 @@ void PositionStruct::DrawBoard(uint32_t mv)
 		for (j = FILE_LEFT; j <= FILE_RIGHT; j++) {
 			pc = ucpcSquares[COORD_XY(j, i)];
 			if (pc == 0) {
-				printf("+");
+				printf(" .");
 			}
 			else {
-				c = PIECE_BYTE(PIECE_TYPE(pc)) + (pc < 32 ? 0 : 'a' - 'A');
-				printf("%c", c);
+				c = PIECE_BYTE_IN_CHINESE(PIECE_TYPE(pc), pc < 32);
+				printf("%s", c);
 			}
 		}
-		printf("\n");
+		printf(" %d\n", 12 - i);
 	}
+	printf(" a b c d e f g h i\n");
 }
