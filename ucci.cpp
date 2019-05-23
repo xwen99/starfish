@@ -1,7 +1,6 @@
 #include <cstdio>
-#include "base2.h"
+#include <iostream>
 #include "parse.h"
-#include "pipe.h"
 #include "ucci.h"  
 #pragma comment(lib, "Shlwapi.lib")
 
@@ -12,8 +11,6 @@
  * 前两个解释器都等待是否有输入，如果没有输入则执行待机指令"Idle()"
  * 而第三个解释器("BusyLine()"，只用在引擎思考时)则在没有输入时直接返回"UCCI_COMM_UNKNOWN"
  */
-static PipeStruct pipeStd;
-
 const int MAX_MOVE_NUM = 1024;
 
 static char szFen[LINE_INPUT_MAX_CHAR];
@@ -58,8 +55,7 @@ static bool ParsePos(UcciCommStruct& UcciComm, char* lp) {
 UcciCommEnum BootLine(void) {
 	//该函数用来接受第一条指令，如果是ucci，则返回UCCI_COMM_UCCI
 	char szLineStr[LINE_INPUT_MAX_CHAR];
-	pipeStd.Open();
-	while (!pipeStd.LineInput(szLineStr)) {
+	while (!std::cin.getline(szLineStr, LINE_INPUT_MAX_CHAR)) {
 		Idle();
 	}
 	if (StrEqv(szLineStr, "ucci")) {
@@ -77,7 +73,7 @@ UcciCommEnum IdleLine(UcciCommStruct& UcciComm, bool bDebug) {
 	char* lp;
 	bool bGoTime;
 
-	while (!pipeStd.LineInput(szLineStr)) {
+	while (!std::cin.getline(szLineStr, LINE_INPUT_MAX_CHAR)) {
 		//输入一个指令
 		Idle();
 	}
@@ -118,12 +114,12 @@ UcciCommEnum IdleLine(UcciCommStruct& UcciComm, bool bDebug) {
 UcciCommEnum BusyLine(UcciCommStruct& UcciComm, bool bDebug) {
 	char szLineStr[LINE_INPUT_MAX_CHAR];
 	char* lp;
-	if (pipeStd.LineInput(szLineStr)) {
+	if (std::cin.getline(szLineStr, LINE_INPUT_MAX_CHAR)) {
 		if (bDebug) {
 			printf("info busyline [%s]\n", szLineStr);
 			fflush(stdout);
 		}
-		// "BusyLine"只能接收"isready"、"ponderhit"和"stop"这三条指令
+		// "BusyLine"只能接收"isready"、"quit"这两条指令
 		if (false) {
 		}
 		else if (StrEqv(szLineStr, "isready")) {

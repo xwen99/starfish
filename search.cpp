@@ -1,5 +1,4 @@
 #include <cstdio>
-#include "base2.h"
 #include "position.h"
 #include "hash.h"
 #include "ucci.h"

@@ -1,5 +1,4 @@
 #include <cstdio>
-#include "base2.h"
 #include "parse.h"
 #include "ucci.h"
 #include "position.h"
@@ -16,7 +15,6 @@ int main(void) {
 	if (BootLine() != UCCI_COMM_UCCI) {
 		return 0;
 	}
-	LocatePath(Search.szBookFile, "BOOK.DAT");
 	InitZobrist();
 	Search.pos.FromFen(cszStartFen);
 	Search.pos.nDistance = 0;
@@ -38,7 +36,6 @@ int main(void) {
 			case UCCI_COMM_GO:
 				Search.nMaxTimer = UcciComm.nTime;
 				SearchMain(UCCI_MAX_DEPTH);
-		//		SearchMain();
 				break;
 			case UCCI_COMM_QUIT:
 				Search.bQuit = true;

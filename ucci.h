@@ -4,6 +4,7 @@
 #define UCCI_H
 
 const int UCCI_MAX_DEPTH = 32; // UCCI引擎思考的极限深度
+const int LINE_INPUT_MAX_CHAR = 8192;
 
 // UCCI指令类型
 enum UcciCommEnum {

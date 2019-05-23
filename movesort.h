@@ -21,7 +21,7 @@ const int PHASE_REST = 4;
 const bool NEXT_ALL = true;    // 着法顺序函数"MoveSortStruct::NextQuiesc()"选项
 const bool ROOT_UNIQUE = true; // 着法顺序函数"MoveSortStruct::ResetRoot()"选项
 // MVV/LVA每种子力的价值
-static BYTE cucMvvLva[24] = {
+static int cucMvvLva[24] = {
   0, 0, 0, 0, 0, 0, 0, 0,
   5, 1, 1, 3, 4, 3, 2, 0,
   5, 1, 1, 3, 4, 3, 2, 0

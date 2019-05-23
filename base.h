@@ -1,6 +1,7 @@
 #include <cassert>
 #include <sys/timeb.h>
 #include <cstdint>
+#include <windows.h>
 
 #ifndef BASE_H
 #define BASE_H
@@ -44,6 +45,10 @@ inline int64_t GetTime() {
 	timeb tb;
 	ftime(&tb);
 	return (int64_t)tb.time * 1000 + tb.millitm;
+}
+
+inline void Idle(void) {
+	Sleep(1);
 }
 
 #endif
