@@ -1,68 +1,9 @@
-# starfish TODO
+# starfish
 
-## 限制
+A XiangQi (Chinese cheese) engine, final project of Spring 2019 Artificial Intelligence at Tongji University.
 
-* 禁止一切全局变量的使用
-* 头文件内容放在 `#ifndef XXX_H #def XXX_H … #endif` 块中
-* 建议开发环境为 MSVC，尽量减少影响运行速度的写法，尽量使用 C 方式
-* 参考“ElephantEye”，“moonfish”，“象棋小巫师”的实现
-* …
+Developed following tutorial Computer Cheese Step by Step(<http://www.xqbase.com/computer/stepbystep1.htm>) , mainly refer to opensource Chinese cheese engine eleeye(<https://github.com/xqbase/eleeye>) and moonfish(<https://github.com/walker8088/moonfish>).
 
-## 第一阶段 
+## Compiler Environment
 
-`DDL5/18`
-
-本阶段先不动接口。
-
-### 搜索模块
-
-`温鑫`
-
-search.h/search.cpp
-
-* 搜索模块，除了静态搜索、完全搜索和根结点搜索这三个主要过程外，还包括迭代加深控制、后台思考、时间分配、搜索参数统计和搜索信息输出等内容。该模块是整个程序的核心模块。
-
-movesort.h/movesort.cpp
-
-* 着法列表排序模块。
-
-- [x] 迭代加深
-- [x] 时间控制
-- [x] 置换表
-- [x] 历史表
-- [x] 走法顺序优化+PVS
-
-### 估值模块
-
-`毕晓栋`
-
-pregen.h/pregen.cpp
-
-* Zobrist 数组和着法预置表的生成模块。ElephantEye 的预置表分两个部分，一是滑动棋子的着法预置表(包括不吃子、车吃子、炮吃子和隔两子吃子)，它是实现位行和位列技术的基础；二是其他棋子的着法预置表，使得着法生成时避免了烦琐的边界判断。
-
-evaluate.cpp
-
-* 局面评价函数，ElephantEye 采用了四级偷懒评价的机制，最粗的层次只评价特殊棋型，进一层次评价牵制，再进一层次评价车的灵活性，最高层次还评价马的阻碍。
-
-### 着法生成模块
-
-`王森`
-
-position.h/position.cpp
-
-- 主要描述着法和局面的数据结构及功能。局面的处理是本模块的重点，处理内容包括局面初始化、FEN串导入、棋子移动、杀手着法的合理性判断、将军判断、长将和循环检测、子力价值分调整等过程，还包括5个子力位置价值表。
-
-genmoves.cpp
-
-着法生成器，包括生成吃子着法和生成不吃子着法的两个，但不能只生成解除将军的着法。在生成吃子着法的同时赋予每个着法以相应的MVV(LVA)(或称准SEE)值。该模块还有一个专门判断棋子是否有保护的函数，来计算MVV(LVA)值，对于有保护的棋子，计算MVV-LVA的值(小于零不计)，对于无保护的棋子，只计算MVV的值。因此，判断棋子是否有根的程序也包括在本模块中。
-
-### 通讯模块
-
-`杨晨`
-
- ucci.h/ucci.cpp
-
-* UCCI命令解释模块，包括 Windows 和 Unix 下的行输入接收程序。
-
-## 第二阶段
-
+MSVC 16.1.0
