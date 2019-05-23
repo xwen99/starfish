@@ -1,15 +1,12 @@
 #include <cstring>
-#include "base.h"
-#include "rc4prng.h"
-
+#include "tools.h"
 #ifndef POSITION_H
 #define POSITION_H
 
-const int MAX_GEN_MOVES = 128; // 最大的生成走法数
-const int MAX_MOVES = 256;     // 最大的历史走法数
+const int MAX_GEN_MOVES = 128;			// 最大的生成走法数
+const int MAX_MOVES = 256;				// 最大的历史走法数
 const int MATE_VALUE = 10000;           // 最高分值，即将死的分值
-const int BAN_VALUE = MATE_VALUE - 100; // 长将判负的分值，低于该值将不写入置换表(参阅"hash.cpp")
-const int WIN_VALUE = MATE_VALUE - 200; // 搜索出胜负的分值界限，超出此值就说明已经搜索出杀棋了
+const int WIN_VALUE = MATE_VALUE - 100; // 搜索出胜负的分值界限，超出此值就说明已经搜索出杀棋了
 const int NULLOKAY_MARGIN = 200;        // 空着裁剪可以不检验的子力价值边界
 const int NULLSAFE_MARGIN = 400;        // 允许使用空着裁剪的条件的子力价值边界
 const int DRAW_VALUE = 20;              // 和棋时返回的分数(取负值)
@@ -213,7 +210,7 @@ struct ZobristStruct {
 extern struct ZobristTable{
 	ZobristStruct Player;
 	ZobristStruct Table[14][256];
-} Zobrist;
+} Zobrist;	// 其实没错
 
 // 初始化Zobrist表
 void InitZobrist(void);
@@ -261,11 +258,6 @@ inline uint32_t MOVE_COORD(int mv) {      // 把着法转换成字符串
 	Ret.c[1] = '9' - RANK_Y(SRC(mv)) + RANK_TOP;
 	Ret.c[2] = FILE_X(DST(mv)) - FILE_LEFT + 'a';
 	Ret.c[3] = '9' - RANK_Y(DST(mv)) + RANK_TOP;
-	// 断言输出着法的合理性
-	__ASSERT_BOUND('a', Ret.c[0], 'i');
-	__ASSERT_BOUND('0', Ret.c[1], '9');
-	__ASSERT_BOUND('a', Ret.c[2], 'i');
-	__ASSERT_BOUND('0', Ret.c[3], '9');
 	return Ret.dw;
 }
 
@@ -367,25 +359,24 @@ struct PositionStruct {
 	int GenMoves(int* mvs, bool bCapture = false) const;
 	bool LegalMove(int mv) const;               // 判断走法是否合理
 	bool Checked(void) const;                   // 判断是否被将军
-	bool IsMate(void);                          // 判断是否被杀
 	int DrawValue(void) const {                 // 和棋分值
 		return (nDistance & 1) == 0 ? -DRAW_VALUE : DRAW_VALUE;
 	}
 	int RepStatus(int nRecur = 1) const;        // 检测重复局面
 	int RepValue(int nRepStatus) const {        // 重复局面分值
 		int vlReturn;
-		vlReturn = ((nRepStatus & 2) == 0 ? 0 : nDistance - BAN_VALUE) +
-			((nRepStatus & 4) == 0 ? 0 : BAN_VALUE - nDistance);
+		vlReturn = ((nRepStatus & 2) == 0 ? 0 : nDistance - MATE_VALUE) +
+			((nRepStatus & 4) == 0 ? 0 : MATE_VALUE - nDistance);
 		return vlReturn == 0 ? DrawValue() : vlReturn;
 	}
 	bool NullOkay(void) const {                 // 判断是否允许空步裁剪
 		return (sdPlayer == 0 ? vlWhite : vlBlack) > NULL_MARGIN;
 	}
 	// 局面处理过程
-	void FromFen(const char* szFen); // FEN串识别
-	void ToFen(char* szFen) const;   // 生成FEN串
+	void FromFen(const char* szFen);			// FEN串识别
+	void ToFen(char* szFen) const;			    // 生成FEN串
 	void Mirror(PositionStruct & posMirror) const; // 对局面镜像
-	void DrawBoard(uint32_t mv = NULL);	// 打印局面
+	void DrawBoard(uint32_t mv = NULL);			// 打印局面
 };
 
 #endif

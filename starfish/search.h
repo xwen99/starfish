@@ -1,4 +1,4 @@
-#include "base.h"
+#include "tools.h"
 #include "ucci.h"
 #include "position.h"
 #ifndef SEARCH_H
@@ -6,7 +6,7 @@
 
 // 搜索前可设置的全局变量，指定搜索参数
 struct SearchStruct {
-	PositionStruct pos;                // 有待搜索的局面
+	PositionStruct pos;                // 待搜索的局面
 	bool bQuit;						   // 是否收到退出指令
 	bool bDebug;					   // 是否调试模式
 	bool bUseHash, bUseBook;           // 是否使用置换表裁剪和开局库

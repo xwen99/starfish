@@ -1,5 +1,5 @@
 #include <cstdio>
-#include "parse.h"
+#include "tools.h"
 #include "ucci.h"
 #include "position.h"
 #include "hash.h"

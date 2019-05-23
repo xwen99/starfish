@@ -31,20 +31,14 @@ static int ProbeHash(const PositionStruct& pos, int vlAlpha, int vlBeta, int nDe
 		return -MATE_VALUE;
 	}
 	mv = hsh.wmv;
-	bMate = false;
+	bMate = FALSE;
 	if (hsh.svl > WIN_VALUE) {
-		if (hsh.svl < BAN_VALUE) {
-			return -MATE_VALUE; // 可能导致搜索的不稳定性，立刻退出，但最佳着法可能拿到
-		}
 		hsh.svl -= pos.nDistance;
-		bMate = true;
+		bMate = TRUE;
 	}
 	else if (hsh.svl < -WIN_VALUE) {
-		if (hsh.svl > -BAN_VALUE) {
-			return -MATE_VALUE; // 同上
-		}
 		hsh.svl += pos.nDistance;
-		bMate = true;
+		bMate = TRUE;
 	}
 	if (hsh.ucDepth >= nDepth || bMate) {
 		if (hsh.ucFlag == HASH_BETA) {
@@ -68,15 +62,9 @@ static void RecordHash(const PositionStruct& pos, int nFlag, int vl, int nDepth,
 	hsh.ucFlag = nFlag;
 	hsh.ucDepth = nDepth;
 	if (vl > WIN_VALUE) {
-		if (mv == 0 && vl <= BAN_VALUE) {
-			return; // 可能导致搜索的不稳定性，并且没有最佳着法，立刻退出
-		}
 		hsh.svl = vl + pos.nDistance;
 	}
 	else if (vl < -WIN_VALUE) {
-		if (mv == 0 && vl >= -BAN_VALUE) {
-			return; // 同上
-		}
 		hsh.svl = vl - pos.nDistance;
 	}
 	else {

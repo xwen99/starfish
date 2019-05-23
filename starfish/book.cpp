@@ -10,7 +10,7 @@ int GetBookMoves(const PositionStruct& pos, BookStruct* lpbks) {
 	// 从开局库中搜索着法的例程，有以下几个步骤：
 	BookData.init();
 
-	// 1. 用拆半查找法搜索局面；
+	// 1. 用折半查找法搜索局面；
 	posScan = pos;
 	for (nScan = 0; nScan < 2; nScan++) {
 		nPtr = nLow = 0;
@@ -39,7 +39,6 @@ int GetBookMoves(const PositionStruct& pos, BookStruct* lpbks) {
 	if (nScan == 2) {
 		return 0;
 	}
-	__ASSERT_BOUND(0, nPtr, BookData.nLen - 1);
 
 	// 3. 如果找到局面，则向前查找第一个着法；
 	for (nPtr--; nPtr >= 0; nPtr--) {
@@ -72,7 +71,7 @@ int GetBookMoves(const PositionStruct& pos, BookStruct* lpbks) {
 	for (i = 0; i < nMoves - 1; i++) {
 		for (j = nMoves - 1; j > i; j--) {
 			if (lpbks[j - 1].wvl < lpbks[j].wvl) {
-				SWAP(lpbks[j - 1], lpbks[j]);
+				std::swap(lpbks[j - 1], lpbks[j]);
 			}
 		}
 	}

@@ -1,15 +1,13 @@
-#ifndef MOVESORT_H
-#define MOVESORT_H
-
 #include <cstring>
 #include <algorithm>
-#include "base.h"
 #include "position.h"
+#ifndef MOVESORT_H
+#define MOVESORT_H
 
 const int LIMIT_DEPTH = 64;       // 搜索的极限深度
 const int SORT_VALUE_MAX = 65535; // 着法序列最大值
 
-extern int *nHistory; // 历史表
+extern int* nHistory; // 历史表
 
 // 走法排序阶段
 const int PHASE_HASH = 0;
@@ -27,7 +25,7 @@ static int cucMvvLva[24] = {
   5, 1, 1, 3, 4, 3, 2, 0
 };
 extern PositionStruct& Pos;
-extern uint16_t (*wmvKiller)[2];
+extern uint16_t(*wmvKiller)[2];
 
 // 求MVV/LVA值
 inline int MvvLva(int mv) {
@@ -73,7 +71,6 @@ int MoveSortStruct::Next(void) {
 	int mv;
 	switch (nPhase) {
 		// "nPhase"表示着法启发的若干阶段，依次为：
-
 		// 0. 置换表着法启发，完成后立即进入下一阶段；
 		case PHASE_HASH:
 			nPhase = PHASE_KILLER_1;
@@ -81,28 +78,24 @@ int MoveSortStruct::Next(void) {
 				return mvHash;
 			}
 			// 技巧：这里没有"break"，表示"switch"的上一个"case"执行完后紧接着做下一个"case"，下同
-
 		  // 1. 杀手着法启发(第一个杀手着法)，完成后立即进入下一阶段；
 		case PHASE_KILLER_1:
 			nPhase = PHASE_KILLER_2;
 			if (mvKiller1 != mvHash && mvKiller1 != 0 && Pos.LegalMove(mvKiller1)) {
 				return mvKiller1;
 			}
-
 			// 2. 杀手着法启发(第二个杀手着法)，完成后立即进入下一阶段；
 		case PHASE_KILLER_2:
 			nPhase = PHASE_GEN_MOVES;
 			if (mvKiller2 != mvHash && mvKiller2 != 0 && Pos.LegalMove(mvKiller2)) {
 				return mvKiller2;
 			}
-
 			// 3. 生成所有着法，完成后立即进入下一阶段；
 		case PHASE_GEN_MOVES:
 			nPhase = PHASE_REST;
 			nGenMoves = Pos.GenMoves(mvs);
 			std::sort(mvs, mvs + nGenMoves, CompareHistory);
 			nIndex = 0;
-
 			// 4. 对剩余着法做历史表启发；
 		case PHASE_REST:
 			while (nIndex < nGenMoves) {
@@ -112,7 +105,6 @@ int MoveSortStruct::Next(void) {
 					return mv;
 				}
 			}
-
 			// 5. 没有着法了，返回零。
 		default:
 			return 0;
@@ -121,7 +113,7 @@ int MoveSortStruct::Next(void) {
 
 // 对最佳走法的处理
 inline void SetBestMove(int mv, int nDepth, uint16_t* lpwmvKiller) {
-	nHistory[mv] += SQR(nDepth);
+	nHistory[mv] += nDepth * nDepth;
 	if (lpwmvKiller[0] != mv) {
 		lpwmvKiller[1] = lpwmvKiller[0];
 		lpwmvKiller[0] = mv;

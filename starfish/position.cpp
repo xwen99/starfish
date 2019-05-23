@@ -1,5 +1,4 @@
 #include <cstdio>
-#include "base.h"
 #include "position.h"
 
 // 判断棋子是否在棋盘中的数组
@@ -255,7 +254,7 @@ static const uint8_t cucvlPiecePos[7][256] = {
  * 每方的棋子顺序依次是：帅仕仕相相马马车车炮炮兵兵兵兵兵(将士士象象马马车车炮炮卒卒卒卒卒)
  * 提示：判断棋子是红子用"pc < 32"，黑子用"pc >= 32"
  */
-const int cnPieceTypes[48] = {
+static const int cnPieceTypes[48] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 6, 6, 6,
   0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 6, 6, 6
@@ -593,7 +592,7 @@ bool PositionStruct::Checked() const {
 		}
 		for (j = 0; j < 2; j++) {
 			pcDst = ucpcSquares[sqSrc + ccKnightCheckDelta[i][j]];
-			if ((pcDst & pcOppSide) != 0 && (PIECE_INDEX(pcDst) == KNIGHT_FROM 
+			if ((pcDst & pcOppSide) != 0 && (PIECE_INDEX(pcDst) == KNIGHT_FROM
 				|| PIECE_INDEX(pcDst) == KNIGHT_TO)) {
 				return true;
 			}
@@ -607,7 +606,7 @@ bool PositionStruct::Checked() const {
 		while (IN_BOARD(sqDst)) {
 			pcDst = ucpcSquares[sqDst];
 			if (pcDst != 0) {	//扫描线上第一个棋子
-				if ((pcDst & pcOppSide) != 0 && (PIECE_INDEX(pcDst) == ROOK_FROM 
+				if ((pcDst & pcOppSide) != 0 && (PIECE_INDEX(pcDst) == ROOK_FROM
 					|| PIECE_INDEX(pcDst) == ROOK_TO || PIECE_INDEX(pcDst) == KING_FROM)) {
 					return true;
 				}
@@ -629,25 +628,6 @@ bool PositionStruct::Checked() const {
 		}
 	}
 	return false;
-}
-
-// 判断是否被杀
-bool PositionStruct::IsMate(void) {
-	int i, nGenMoveNum, pcCaptured;
-	int mvs[MAX_GEN_MOVES];
-
-	nGenMoveNum = GenMoves(mvs);
-	for (i = 0; i < nGenMoveNum; i++) {
-		pcCaptured = MovePiece(mvs[i]);
-		if (!Checked()) {
-			UndoMovePiece(mvs[i], pcCaptured);
-			return false;
-		}
-		else {
-			UndoMovePiece(mvs[i], pcCaptured);
-		}
-	}
-	return true;
 }
 
 // 检测重复局面
@@ -826,8 +806,9 @@ void PositionStruct::ToFen(char* szFen) const {
 	lpFen++;
 	*lpFen = '\0';
 }
+
 // 对局面镜像
-void PositionStruct::Mirror(PositionStruct & posMirror) const {
+void PositionStruct::Mirror(PositionStruct& posMirror) const {
 	int sq, pc;
 	posMirror.ClearBoard();
 	for (sq = 0; sq < 256; sq++) {
@@ -846,7 +827,7 @@ void PositionStruct::Mirror(PositionStruct & posMirror) const {
 inline const char* PIECE_BYTE_IN_CHINESE(int pt, bool type) {
 	if (type == true)
 		return cszPieceBytesInChineseRed[pt];
-	else 
+	else
 		return cszPieceBytesInChineseBlack[pt];
 }
 

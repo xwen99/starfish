@@ -15,7 +15,7 @@ const int RESIGN_VALUE = 300;    // 认输的分值
 const int DRAW_OFFER_VALUE = 40; // 提和的分值
 
 SearchStruct Search;
-PositionStruct &Pos = Search.pos;
+PositionStruct& Pos = Search.pos;
 // 搜索信息，是封装在模块内部的
 static struct {
 	int64_t llTime;                     // 计时器
@@ -28,7 +28,7 @@ static struct {
 	MoveSortStruct MoveSort;            // 根结点的着法序列
 } Search2;
 HashStruct* hshItems = Search2.HashTable;
-uint16_t (*wmvKiller)[2] = Search2.wmvKiller;
+uint16_t(*wmvKiller)[2] = Search2.wmvKiller;
 int* nHistory = Search2.nHistoryTable;
 
 void BuildPos(PositionStruct& pos, const UcciCommStruct& UcciComm) {
@@ -46,40 +46,12 @@ void BuildPos(PositionStruct& pos, const UcciCommStruct& UcciComm) {
 	}
 }
 
-// 中断例程
-static bool Interrupt(void) {
-	if ((int)(GetTime() - Search2.llTime) > Search.nMaxTimer) {
-		Search2.bStop = true;
-		return true;
-	}
-
-	UcciCommStruct UcciComm;
-	// 先调用UCCI解释程序，再判断是否中止
-	switch (BusyLine(UcciComm, Search.bDebug)) {
-		case UCCI_COMM_ISREADY:
-			// "isready"指令实际上没有意义
-			printf("readyok\n");
-			fflush(stdout);
-			return false;
-		case UCCI_COMM_QUIT:
-			// "quit"指令发送退出信号
-			Search.bQuit = Search2.bStop = true;
-			return true;
-		default:
-			return false;
-	}
-}
-
-// 无害裁剪
-static int HarmlessPruning(const PositionStruct& pos, int vlBeta) {
-	int vlRep;
-
-	// 重复裁剪；
-	vlRep = pos.RepStatus();
+// 重复裁剪
+static int RepPruning(const PositionStruct& pos, int vlBeta) {
+	int vlRep = pos.RepStatus();
 	if (vlRep > 0) {
 		return pos.RepValue(vlRep);
 	}
-
 	return -MATE_VALUE;
 }
 
@@ -90,51 +62,41 @@ inline int Evaluate(const PositionStruct& pos) {
 	return vl == pos.DrawValue() ? vl - 1 : vl;
 }
 
-// 静态搜索例程
+// 静态搜索过程
 static int SearchQuiesc(PositionStruct& pos, int vlAlpha, int vlBeta) {
 	int vlBest, vl, nGenMoves;
 	int mvs[MAX_GEN_MOVES];
 	// 静态搜索例程包括以下几个步骤：
-
-	// 1. 无害裁剪；
-	vl = HarmlessPruning(pos, vlBeta);
+	// 1. 重复裁剪；
+	vl = RepPruning(pos, vlBeta);
 	if (vl > -MATE_VALUE) {
 		return vl;
 	}
-
-	// 4. 达到极限深度，直接返回评价值；
+	// 2. 达到极限深度，直接返回评价值；
 	if (pos.nDistance == LIMIT_DEPTH) {
 		return Evaluate(pos);
 	}
-	__ASSERT(Search.pos.nDistance < LIMIT_DEPTH);
-
-	// 5. 初始化；
+	// 3. 初始化；
 	vlBest = -MATE_VALUE;
-
-	// 6. 对于被将军的局面，生成全部着法；
+	// 4. 对于被将军的局面，生成全部着法；
 	if (pos.InCheck()) {
 		nGenMoves = pos.GenMoves(mvs);
 		std::sort(mvs, mvs + nGenMoves, CompareHistory);
 	}
 	else {
-		// 7. 对于未被将军的局面，在生成着法前首先尝试空着(空着启发)，即对局面作评价；
+		// 5. 对于未被将军的局面，在生成着法前首先尝试空着(空着启发)，即对局面作评价；
 		vl = Evaluate(pos);
-		__ASSERT_BOUND(1 - WIN_VALUE, vl, WIN_VALUE - 1);
-		__ASSERT(vl > vlBest);
 		if (vl >= vlBeta) {
 			return vl;
 		}
 		vlBest = vl;
-		vlAlpha = MAX(vl, vlAlpha);
-
-		// 8. 对于未被将军的局面，生成并排序所有吃子着法(MVV(LVA)启发)；
+		vlAlpha = max(vl, vlAlpha);
+		// 6. 对于未被将军的局面，生成并排序所有吃子着法(MVV(LVA)启发)；
 		nGenMoves = pos.GenMoves(mvs, GEN_CAPTURE);
 		std::sort(mvs, mvs + nGenMoves, CompareMvvLva);
 	}
-
-	// 9. 用Alpha-Beta算法搜索这些着法；
+	// 7. 用Alpha-Beta算法搜索这些着法；
 	for (int i = 0; i < nGenMoves; i++) {
-		__ASSERT(pos.InCheck() || pos.ucpcSquares[DST(mvs[i])] > 0);
 		if (pos.MakeMove(mvs[i])) {
 			vl = -SearchQuiesc(pos, -vlBeta, -vlAlpha);
 			pos.UndoMakeMove();
@@ -143,14 +105,12 @@ static int SearchQuiesc(PositionStruct& pos, int vlAlpha, int vlBeta) {
 					return vl;
 				}
 				vlBest = vl;
-				vlAlpha = MAX(vl, vlAlpha);
+				vlAlpha = max(vl, vlAlpha);
 			}
 		}
 	}
-
-	// 10. 返回分值。
+	// 8. 返回分值。
 	if (vlBest == -MATE_VALUE) {
-		__ASSERT(pos.InCheck());
 		return pos.nDistance - MATE_VALUE;
 	}
 	else {
@@ -166,70 +126,47 @@ static int SearchPV(int vlAlpha, int vlBeta, int nDepth, bool bNoNull = false) {
 	int mvBest, mvHash, mv;
 	MoveSortStruct MoveSort;
 	// 完全搜索例程包括以下几个步骤：
-
 	// 1. 在叶子结点处调用静态搜索；
-	
 	if (nDepth <= 0) {
-		__ASSERT(nDepth >= -NULL_DEPTH);
-//		return Evaluate(Search.pos);
+		//		return Evaluate(Search.pos);
 		return SearchQuiesc(Search.pos, vlAlpha, vlBeta);
 	}
-
 	// 2. 无害裁剪；
-	vl = HarmlessPruning(Search.pos, vlBeta);
+	vl = RepPruning(Search.pos, vlBeta);
 	if (vl > -MATE_VALUE) {
 		return vl;
 	}
-
 	// 3. 置换裁剪；
 	vl = ProbeHash(Search.pos, vlAlpha, vlBeta, nDepth, mvHash);
 	if (Search.bUseHash && vl > -MATE_VALUE) {
 		// 由于PV结点不适用置换裁剪，所以不会发生PV路线中断的情况
 		return vl;
 	}
-
 	// 4. 达到极限深度，直接返回评价值；
-	__ASSERT(Search.pos.nDistance > 0);
 	if (Search.pos.nDistance == LIMIT_DEPTH) {
 		return Evaluate(Search.pos);
 	}
-	__ASSERT(Search.pos.nDistance < LIMIT_DEPTH);
-
-	// 5. 中断调用
-	vlBest = -MATE_VALUE;
-	if (Interrupt()) {
-		return vlBest;
-	}
-
 	// 5. 尝试空着裁剪；
 	if (bNoNull && !Search.pos.InCheck() && Search.pos.NullOkay()) {
 		Search.pos.NullMove();
 		vl = -SearchPV(-vlBeta, 1 - vlBeta, nDepth - NULL_DEPTH - 1, NO_NULL);
 		Search.pos.UndoNullMove();
-		if (Search2.bStop) {
-			return vlBest;
-		}
 
 		if (vl >= vlBeta) {
 			return vl;
 		}
 	}
-
 	// 6. 初始化；
 	mvBest = 0;
 	nHashFlag = HASH_ALPHA;
 	vlBest = -MATE_VALUE;
 	MoveSort.Init(mvHash);
-
 	// 7. 按照"MoveSortStruct::Next()"的着法顺序逐一搜索；
 	while ((mv = MoveSort.Next()) != 0) {
 		if (Search.pos.MakeMove(mv)) {
-
 			// 8. 尝试选择性延伸；
 			nNewDepth = (Search.pos.InCheck() ? nDepth : nDepth - 1);
-
-			// 9. 主要变例搜索；
-			
+			// 9. 主要变例搜索；			
 			if (vlBest == -MATE_VALUE) {
 				vl = -SearchPV(-vlBeta, -vlAlpha, nNewDepth);
 			}
@@ -243,7 +180,6 @@ static int SearchPV(int vlAlpha, int vlBeta, int nDepth, bool bNoNull = false) {
 			if (Search2.bStop) {
 				return vlBest;
 			}
-
 			// 10. Alpha-Beta边界判定；
 			if (vl > vlBest) {
 				vlBest = vl;
@@ -268,7 +204,6 @@ static int SearchPV(int vlAlpha, int vlBeta, int nDepth, bool bNoNull = false) {
 
 	// 11. 更新置换表、历史表和杀手着法表。
 	if (vlBest == -MATE_VALUE) {
-		__ASSERT(Search.pos.InCheck());
 		return Search.pos.nDistance - MATE_VALUE;
 	}
 	else {
@@ -284,22 +219,17 @@ static int SearchPV(int vlAlpha, int vlBeta, int nDepth, bool bNoNull = false) {
 static int SearchRoot(int nDepth) {
 	int nNewDepth, vlBest, vl, mv, nCurrTimer;
 	// 根结点搜索例程包括以下几个步骤：
-
 	// 1. 初始化
 	vlBest = -MATE_VALUE;
 	Search2.MoveSort.Init(Search2.mvResult);
-
 	// 2. 逐一搜索每个着法
 	while ((mv = Search2.MoveSort.Next()) != 0) {
 		if (Search.pos.MakeMove(mv)) {
-
 			// 3. 尝试选择性延伸(只考虑将军延伸)
 			nNewDepth = (Search.pos.InCheck() ? nDepth : nDepth - 1);
-
 			// 4. 主要变例搜索
 			if (vlBest == -MATE_VALUE) {
 				vl = -SearchPV(-MATE_VALUE, MATE_VALUE, nNewDepth, NO_NULL);
-				__ASSERT(vl > vlBest);
 			}
 			else {
 				vl = -SearchPV(-vlBest - 1, -vlBest, nNewDepth);
@@ -311,14 +241,11 @@ static int SearchRoot(int nDepth) {
 			if (Search2.bStop) {
 				return vlBest;
 			}
-
 			// 5. Alpha-Beta边界判定("vlBest"代替了"SearchPV()"中的"vlAlpha")
 			if (vl > vlBest) {
-
 				// 6. 如果搜索到第一着法，那么"未改变最佳着法"的计数器加1，否则清零
 				Search2.nUnchanged = (vlBest == -MATE_VALUE ? Search2.nUnchanged + 1 : 0);
 				vlBest = vl;
-
 				// 7. 搜索到最佳着法时记录主要变例
 				Search2.mvResult = mv;
 			}
@@ -360,8 +287,6 @@ void SearchMain(int nDepth) {
 					break;
 				}
 			}
-			__ASSERT(vl < 0);
-			__ASSERT(i < nBookMoves);
 			// c. 如果开局库中的着法构成循环局面，那么不走这个着法
 			Search.pos.MakeMove(bks[i].wmv);
 			if (Search.pos.RepStatus(3) == 0) {
@@ -381,7 +306,7 @@ void SearchMain(int nDepth) {
 	// 3. 如果深度为零则返回静态搜索值
 	if (nDepth == 0) {
 		vl = SearchQuiesc(Search.pos, -MATE_VALUE, MATE_VALUE);
-//		vl = Evaluate(Search.pos);
+		//		vl = Evaluate(Search.pos);
 		if (Search.bDebug) {
 			printf("info depth 0 score %d\n", vl);
 			fflush(stdout);
@@ -389,8 +314,8 @@ void SearchMain(int nDepth) {
 		return;
 	}
 
-	// 5. 初始化时间和计数器
-	Search2.bStop  = false;
+	// 4. 初始化时间和计数器
+	Search2.bStop = false;
 	Search2.nUnchanged = 0;
 	Search2.mvResult = 0;
 	ClearKiller(Search2.wmvKiller);
@@ -401,9 +326,9 @@ void SearchMain(int nDepth) {
 	vlLast = 0;
 	nCurrTimer = 0;
 
-	// 6. 做迭代加深搜索
+	// 5. 做迭代加深搜索
 	for (i = 1; i <= nDepth; i++) {
-		// 8. 搜索根结点
+		// 6. 搜索根结点
 		vl = SearchRoot(i);
 		if (Search2.bStop) {
 			if (vl > -MATE_VALUE) {
@@ -416,7 +341,7 @@ void SearchMain(int nDepth) {
 			fflush(stdout);
 		}
 		nCurrTimer = (int)(GetTime() - Search2.llTime);
-		// 9. 如果搜索时间超过适当时限，则终止搜索
+		// 7. 如果搜索时间超过适当时限，则终止搜索
 		nLimitTimer = Search.nMaxTimer;
 		// a. 如果当前搜索值没有落后前一层很多，那么适当时限减半
 		nLimitTimer = (vl + DROPDOWN_VALUE >= vlLast ? nLimitTimer / 2 : nLimitTimer);
@@ -429,14 +354,14 @@ void SearchMain(int nDepth) {
 
 		vlLast = vl;
 
-		// 10. 搜索到杀棋则终止搜索
+		// 8. 搜索到杀棋则终止搜索
 		if (vlLast > WIN_VALUE || vlLast < -WIN_VALUE) {
 			break;
 		}
 
 	}
 
-	// 12. 输出最佳着法
+	// 9. 输出最佳着法
 	uint32_t result = MOVE_COORD(Search2.mvResult);
 	printf("bestmove %.4s\n", (const char*)& result);
 	fflush(stdout);

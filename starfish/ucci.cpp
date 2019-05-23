@@ -1,6 +1,5 @@
 #include <cstdio>
 #include <iostream>
-#include "parse.h"
 #include "ucci.h"  
 #pragma comment(lib, "Shlwapi.lib")
 
@@ -11,7 +10,6 @@
  * 前两个解释器都等待是否有输入，如果没有输入则执行待机指令"Idle()"
  * 而第三个解释器("BusyLine()"，只用在引擎思考时)则在没有输入时直接返回"UCCI_COMM_UNKNOWN"
  */
-const int MAX_MOVE_NUM = 1024;
 
 static char szFen[LINE_INPUT_MAX_CHAR];
 static uint32_t dwCoordList[MAX_MOVE_NUM];
@@ -41,7 +39,7 @@ static bool ParsePos(UcciCommStruct& UcciComm, char* lp) {
 	if (StrScanSkip(lp, " moves ")) {
 		//略过"moves"
 		*(lp - strlen(" moves ")) = '\0';
-		UcciComm.nMoveNum = MIN((int)(strlen(lp) + 1) / 5, MAX_MOVE_NUM); 	// "moves"后面的每个着法都是1个空格和4个字符
+		UcciComm.nMoveNum = min((int)(strlen(lp) + 1) / 5, MAX_MOVE_NUM); 	// "moves"后面的每个着法都是1个空格和4个字符
 		for (i = 0; i < UcciComm.nMoveNum; i++) {
 			dwCoordList[i] = *(uint32_t*)lp; // 4个字符可转换为一个"uint32_t"，存储和处理起来方便
 			lp += sizeof(uint32_t) + 1;// lp后移四个字符和一个空格
@@ -50,7 +48,6 @@ static bool ParsePos(UcciCommStruct& UcciComm, char* lp) {
 	}
 	return true;
 }
-
 
 UcciCommEnum BootLine(void) {
 	//该函数用来接受第一条指令，如果是ucci，则返回UCCI_COMM_UCCI

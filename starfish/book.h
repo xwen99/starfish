@@ -1,5 +1,4 @@
 #include <cstdio>
-#include "base.h"
 #include "buffer.h"
 #include "position.h"
 
