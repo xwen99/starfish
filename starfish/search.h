@@ -20,9 +20,6 @@ extern SearchStruct Search;
 // UCCI局面构造过程
 void BuildPos(PositionStruct& pos, const UcciCommStruct& UcciComm);
 
-// UCCI支持 - 输出叶子结点的局面信息
-void PopLeaf(PositionStruct& pos);
-
 // 搜索的启动过程
 void SearchMain(int nDepth);
 //void SearchMain(void);
