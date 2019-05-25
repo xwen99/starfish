@@ -22,6 +22,5 @@ void BuildPos(PositionStruct& pos, const UcciCommStruct& UcciComm);
 
 // 搜索的启动过程
 void SearchMain(int nDepth);
-//void SearchMain(void);
 
 #endif

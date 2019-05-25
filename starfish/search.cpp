@@ -131,7 +131,7 @@ static int SearchPV(int vlAlpha, int vlBeta, int nDepth, bool bNoNull = false) {
 		//		return Evaluate(Search.pos);
 		return SearchQuiesc(Search.pos, vlAlpha, vlBeta);
 	}
-	// 2. 无害裁剪；
+	// 2. 重复裁剪；
 	vl = RepPruning(Search.pos, vlBeta);
 	if (vl > -MATE_VALUE) {
 		return vl;
@@ -215,7 +215,7 @@ static int SearchPV(int vlAlpha, int vlBeta, int nDepth, bool bNoNull = false) {
 	}
 }
 
-// 根结点搜索例程
+// 根结点搜索过程
 static int SearchRoot(int nDepth) {
 	int nNewDepth, vlBest, vl, mv, nCurrTimer;
 	// 根结点搜索例程包括以下几个步骤：
