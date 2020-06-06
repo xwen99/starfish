@@ -66,10 +66,10 @@ Since there are already stockfish, sunfish and moonfish, why not starfish?
 
 ## Reference
 
-* Computer Cheese Step by Step(<http://www.xqbase.com/computer/stepbystep1.htm>)
-* Chess Programming Wiki(<https://www.chessprogramming.org>)
-* Chinese Chess AI eleeye(<https://github.com/xqbase/eleeye>)
-* Chinese Chess AI moonfish(<https://github.com/walker8088/moonfish>)
-* Chinese Chess AI XiangQi Wizard(<https://github.com/xqbase/xqwlight>)
-* Chess AI sunfish(<https://github.com/thomasahle/sunfish>)
-* Chess AI stockfish(<https://github.com/mcostalba/Stockfish>)
+* Computer Cheese Step by Step (<http://www.xqbase.com/computer/stepbystep1.htm>)
+* Chess Programming Wiki (<https://www.chessprogramming.org>)
+* Chinese Chess AI eleeye (<https://github.com/xqbase/eleeye>)
+* Chinese Chess AI moonfish (<https://github.com/walker8088/moonfish>)
+* Chinese Chess AI XiangQi Wizard (<https://github.com/xqbase/xqwlight>)
+* Chess AI sunfish (<https://github.com/thomasahle/sunfish>)
+* Chess AI stockfish (<https://github.com/mcostalba/Stockfish>)
